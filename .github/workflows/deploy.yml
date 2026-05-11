@@ -1,0 +1,55 @@
+name: Deploy Node Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: docker build -t node-backend .
+
+      - name: Tag Docker Image
+        run: |
+          docker tag node-backend:latest 690640932674.dkr.ecr.eu-north-1.amazonaws.com/node-backend:latest
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push 690640932674.dkr.ecr.eu-north-1.amazonaws.com/node-backend:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 690640932674.dkr.ecr.eu-north-1.amazonaws.com
+
+            docker pull 690640932674.dkr.ecr.eu-north-1.amazonaws.com/node-backend:latest
+
+            docker stop backend || true
+            docker rm backend || true
+
+            docker run -d \
+              --name backend \
+              -p 3000:3000 \
+              -e AWS_REGION=eu-north-1 \
+              690640932674.dkr.ecr.eu-north-1.amazonaws.com/node-backend:latest
