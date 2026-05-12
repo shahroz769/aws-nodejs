@@ -4,10 +4,11 @@ const { app } = require('./app');
 const { initializeDatabase, closeDatabaseConnection } = require('./db');
 
 const port = Number(process.env.PORT) || 3000;
+const host = process.env.HOST || '0.0.0.0';
 
 async function startServer() {
-  const server = app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
+  const server = app.listen(port, host, () => {
+    console.log(`Server listening on http://${host}:${port}`);
   });
 
   initializeDatabase().catch((error) => {
