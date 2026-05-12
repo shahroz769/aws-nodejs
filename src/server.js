@@ -6,10 +6,12 @@ const { initializeDatabase, closeDatabaseConnection } = require('./db');
 const port = Number(process.env.PORT) || 3000;
 
 async function startServer() {
-  await initializeDatabase();
-
   const server = app.listen(port, () => {
     console.log(`Server listening on http://localhost:${port}`);
+  });
+
+  initializeDatabase().catch((error) => {
+    console.error('Database initialization failed:', error);
   });
 
   const shutdown = async () => {

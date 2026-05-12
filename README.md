@@ -12,6 +12,20 @@ This project uses Express, Drizzle ORM, and PostgreSQL.
 ## Endpoints
 
 - `GET /health`
+- `GET /api/health`
 - `GET /api/users`
+- `POST /api/users`
 
-On startup, the app ensures a `users` table exists and seeds a few users if the table is empty.
+On startup, the app attempts to ensure a `users` table exists and seeds a few users if the table is empty. The health endpoint still responds even if the database is not configured yet.
+
+## Local API checks
+
+```sh
+curl http://localhost:3000/health
+```
+
+```sh
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"Test User\",\"email\":\"test.user@example.com\"}"
+```

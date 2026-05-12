@@ -7,9 +7,12 @@ const app = express();
 
 app.use(express.json());
 
-app.get('/health', (_request, response) => {
-  response.json({ status: 'ok' });
-});
+const healthHandler = (_request, response) => {
+  response.send('ok');
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 app.get('/api/users', async (_request, response, next) => {
   try {
@@ -22,6 +25,36 @@ app.get('/api/users', async (_request, response, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+app.post('/api/users', async (request, response, next) => {
+  try {
+    const { name, email } = request.body;
+
+    if (!name || !email) {
+      return response.status(400).json({
+        error: 'name and email are required',
+      });
+    }
+
+    const db = getDb();
+    const [createdUser] = await db
+      .insert(users)
+      .values({ name, email })
+      .returning();
+
+    return response.status(201).json({
+      data: createdUser,
+    });
+  } catch (error) {
+    if (error.code === '23505') {
+      return response.status(409).json({
+        error: 'email already exists',
+      });
+    }
+
+    return next(error);
   }
 });
 
